@@ -1,30 +1,24 @@
 #!/usr/bin/env python3
 
 from sys import exit, argv
-import requests
-
-type = 1
-if len(argv) > 1:
-    if argv[1] in 'week':
-        type = 2
-    if argv[1] in 'next':
-        type = 3
-
-result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=%d" % type)
-if result.status_code is not 200:
-    exit('Konnte Mensa-Infos nicht abrufen')
-
-
-from bs4 import BeautifulSoup
 import re
 
-content = result.content
-soup = BeautifulSoup(content, 'html.parser')
+try:
+    import requests
+except ImportError :
+    exit('Unable to import requests, package installed?')
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    exit('Unable to import BeautifulSoup 4, package installed?')
 
-days = []
-if type > 1:
-    days = soup.find_all("div", "speiseplan_date")
 
+def query_mensa_page(type=1):
+    result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=%d" % type)
+    if result.status_code is not 200:
+        exit('Konnte Mensa-Infos nicht abrufen')
+
+    return result.content
 
 def get_counters_scrubbed(soup):
     pattern = re.compile('Veg..').search
@@ -82,19 +76,40 @@ def extract_days(soup):
 
     return days
 
-week = {}
-if type > 1 and len(days) > 1:
-    week = extract_days(soup)
 
-menu = ''
-if week:
-    menu = '# Wochenplan Mensa:\n'
-    for day, lst in week.items():
-        dishes = get_counters_scrubbed(lst)
-        menu += format_day(dishes, day)
-else:
-    dishes = get_counters_scrubbed(soup)
-    menu = format_day(dishes)
+def main():
 
-print(menu)
+    type = 1
+    if len(argv) > 1:
+        if argv[1] in 'week':
+            type = 2
+        if argv[1] in 'next':
+            type = 3
 
+    content = query_mensa_page(type)
+    soup = BeautifulSoup(content, 'html.parser')
+
+    days = []
+    if type > 1:
+        days = soup.find_all("div", "speiseplan_date")
+
+
+    week = {}
+    if type > 1 and len(days) > 1:
+        week = extract_days(soup)
+
+    menu = ''
+    if week:
+        menu = '# Wochenplan Mensa:\n'
+        for day, lst in week.items():
+            dishes = get_counters_scrubbed(lst)
+            menu += format_day(dishes, day)
+    else:
+        dishes = get_counters_scrubbed(soup)
+        menu = format_day(dishes)
+
+    print(menu)
+
+
+if __name__ == '__main__':
+    main()
