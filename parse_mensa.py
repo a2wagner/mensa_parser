@@ -12,7 +12,7 @@ if len(argv) > 1:
 
 result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=%d" % type)
 if result.status_code is not 200:
-    exit('Error')
+    exit('Konnte Mensa-Infos nicht abrufen')
 
 
 from bs4 import BeautifulSoup
