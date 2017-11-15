@@ -76,12 +76,25 @@ def extract_days(soup):
 
     return days
 
-def find_dish(soup, dish):
+def find_dish(soup, dish, detail=False):
     time = None
     week = extract_days(soup)
+    match = None
     for day, dishes in week.items():
-        if any(dish in entry.lower() for entry in dishes.strings):
-            return 'There will be %s on %s' % (dish.title(), day)
+        match = next((elem.parent for elem in dishes(text=re.compile(dish, re.IGNORECASE))), None)
+        if match:
+            time = day
+            if not detail:
+                return 'There will be %s on %s' % (dish.title(), day)
+            break
+
+    if not detail or not match:
+        return time
+
+    dish = re.sub(r'\s\(.*\)', '', match.string.strip())
+    counter = match.parent.parent.find(string=re.compile('Ausgabe')).string.strip()
+
+    time = 'Am %s gibt\'s %s an %s' % (day, dish, counter)
 
     return time
 
@@ -105,12 +118,14 @@ def main():
 
     if check:
         print('Checking for', check.title())
+        detail = True
         # first check the current week
         this_week = query_mensa_page(2)
-        time = find_dish(BeautifulSoup(this_week, 'html.parser'), check)
+        time = find_dish(BeautifulSoup(this_week, 'html.parser'), check, detail)
         if not time:
+            # if we have no match in the current week, check the next week
             next_week = query_mensa_page(3)
-            time = find_dish(BeautifulSoup(next_week, 'html.parser'), check)
+            time = find_dish(BeautifulSoup(next_week, 'html.parser'), check, detail)
         if not time:
             print('No %s in the next time... :-(' % check.title())
         else:
