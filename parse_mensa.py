@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 
-from sys import exit
+from sys import exit, argv
 import requests
 
-result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=1")
+type = 1
+if len(argv) > 1:
+    if argv[1] in 'week':
+        type = 2
+
+result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=%d" % type)
 if result.status_code is not 200:
     exit('Error')
 
@@ -13,6 +18,10 @@ import re
 
 content = result.content
 soup = BeautifulSoup(content, 'html.parser')
+
+days = []
+if type is 2:
+    days = soup.find_all("div", "speiseplan_date")
 
 
 def get_counters_scrubbed(soup):
