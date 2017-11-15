@@ -30,7 +30,6 @@ def get_counters_scrubbed(soup):
 
     # get all contents of the different counters, remove parentheses
     dishes = [re.sub('\(.+?\)', '', line.strip()) for counter in soup.find_all('div', 'counter_box') for line in counter.stripped_strings]
-
     # remove empty lines, | spacings, and kJ values etc.
     dishes[:] = [re.sub(r'\|', '\n', line) for line in filter(None, dishes) if not line.lower().startswith(('kj', 'menü'))]
     # remove strange artifacts like multiple spaces, dash for menu counter, and non-breaking spaces
@@ -54,9 +53,47 @@ def format_day(dishes_list, day_string=''):
 
     return menu
 
+def extract_days(soup):
+    plan = soup.find('div', 'speiseplan')
+    days = {}
+    day = ''
+    tags = None
+    # loop over children: days followed by counters
+    for child in plan.children:
+        # only interested in divs containing the menu
+        if child.name and child.name in 'div':
+            # if this div contains a string, it's only the date
+            if child.string:
+                # if we find a day string and have collected tags already, start a new day and store info in dict
+                if tags:
+                    days.update({day: tags})
+                    tags = None
+                day = child.string
+            # if it contains no string but more, all following tags are the dishes of this day
+            else:
+                if tags:
+                    tags.append(child)
+                else:
+                    tags = child
+    # don't forget to add the last day
+    days.update({day: tags})
+    #days = dict([('day', get_counters_scrubbed(day)) for day in days])
 
-dishes = get_counters_scrubbed(soup)
-menu = format_day(dishes)
+    return days
+
+week = {}
+if type is 2 and len(days) > 1:
+    week = extract_days(soup)
+
+menu = ''
+if week:
+    menu = '# Wochenplan Mensa:\n'
+    for day, lst in week.items():
+        dishes = get_counters_scrubbed(lst)
+        menu += format_day(dishes, day)
+else:
+    dishes = get_counters_scrubbed(soup)
+    menu = format_day(dishes)
 
 print(menu)
 
