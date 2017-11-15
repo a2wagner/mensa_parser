@@ -76,15 +76,46 @@ def extract_days(soup):
 
     return days
 
+def find_dish(soup, dish):
+    time = None
+    week = extract_days(soup)
+    for day, dishes in week.items():
+        if any(dish in entry.lower() for entry in dishes.strings):
+            return 'There will be %s on %s' % (dish.title(), day)
+
+    return time
+
 
 def main():
 
+    check = None
     type = 1
     if len(argv) > 1:
         if argv[1] in 'week':
             type = 2
-        if argv[1] in 'next':
+        elif argv[1] in 'next':
             type = 3
+        elif argv[1] in 'check':
+            if len(argv) is 3:
+                check = str(argv[2]).lower()
+            else:
+                check = 'käsespätzle'
+        else:
+            exit('Unknown option')
+
+    if check:
+        print('Checking for', check.title())
+        # first check the current week
+        this_week = query_mensa_page(2)
+        time = find_dish(BeautifulSoup(this_week, 'html.parser'), check)
+        if not time:
+            next_week = query_mensa_page(3)
+            time = find_dish(BeautifulSoup(next_week, 'html.parser'), check)
+        if not time:
+            print('No %s in the next time... :-(' % check.title())
+        else:
+            print(time)
+        return
 
     content = query_mensa_page(type)
     soup = BeautifulSoup(content, 'html.parser')
