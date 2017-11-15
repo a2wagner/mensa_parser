@@ -7,6 +7,8 @@ type = 1
 if len(argv) > 1:
     if argv[1] in 'week':
         type = 2
+    if argv[1] in 'next':
+        type = 3
 
 result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=%d" % type)
 if result.status_code is not 200:
@@ -20,7 +22,7 @@ content = result.content
 soup = BeautifulSoup(content, 'html.parser')
 
 days = []
-if type is 2:
+if type > 1:
     days = soup.find_all("div", "speiseplan_date")
 
 
@@ -77,12 +79,11 @@ def extract_days(soup):
                     tags = child
     # don't forget to add the last day
     days.update({day: tags})
-    #days = dict([('day', get_counters_scrubbed(day)) for day in days])
 
     return days
 
 week = {}
-if type is 2 and len(days) > 1:
+if type > 1 and len(days) > 1:
     week = extract_days(soup)
 
 menu = ''
