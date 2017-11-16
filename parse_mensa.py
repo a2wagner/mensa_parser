@@ -14,6 +14,10 @@ except ImportError:
 
 
 def query_mensa_page(type=1):
+    """
+    Query the Mensa page and return the retrieved content,
+    exit with error if HTTP status code is not okay
+    """
     result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=%d" % type)
     if result.status_code is not 200:
         exit('Konnte Mensa-Infos nicht abrufen')
@@ -21,6 +25,12 @@ def query_mensa_page(type=1):
     return result.content
 
 def get_counters_scrubbed(soup):
+    """
+    Turn the HTML code into a list of strings.
+    vegan/veggi icons are preserved, injected in the code via [veg*] tag
+    which will get replaced in the formatting method by the image.
+    Some other artifacts and unwanted stuff is removed as well.
+    """
     pattern = re.compile('Veg..').search
     [v.parent.find('span').insert_before(' [%s]' % m.group(0)) for v in soup.find_all("div", "vegan_icon") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m]
 
@@ -34,6 +44,9 @@ def get_counters_scrubbed(soup):
     return dishes
 
 def format_day(dishes_list, day_string=''):
+    """
+    Format a list of strings containing Mensa dishes into Markdown formatted code
+    """
     menu = ''
     if day_string:
         menu = '\n \n# %s\n' % day_string
@@ -50,6 +63,11 @@ def format_day(dishes_list, day_string=''):
     return menu
 
 def extract_days(soup):
+    """
+    Parse the HTML code for a complete week and create a dict from the contents.
+    The day shown on the Mensa page is the key, the corresponding menu gets merged in a bs4 tag
+    which then can be parsed by the get_counters_scrubbed method.
+    """
     plan = soup.find('div', 'speiseplan')
     days = {}
     day = ''
@@ -77,6 +95,10 @@ def extract_days(soup):
     return days
 
 def find_dish(soup, dish, detail=False):
+    """
+    Try to find a given dish in the parsed content of the Mensa site and return a string when it will be served if found.
+    If detail is set to True the method returns the counter as well.
+    """
     time = None
     week = extract_days(soup)
     match = None
