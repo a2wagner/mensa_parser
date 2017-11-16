@@ -13,12 +13,12 @@ except ImportError:
     exit('Unable to import BeautifulSoup 4, package installed?')
 
 
-def query_mensa_page(type=1, building=1):
+def query_mensa_page(querytype=1, building=1):
     """
     Query the Mensa page and return the retrieved content,
     exit with error if HTTP status code is not okay
     """
-    result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=%d&display_type=%d" % (building, type))
+    result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=%d&display_type=%d" % (building, querytype))
     if result.status_code is not 200:
         exit('Konnte Mensa-Infos nicht abrufen')
 
@@ -127,26 +127,22 @@ def main():
     #TODO: in case of Mensaria parse the special{box,counter} div as well
 
     check = None
-    type = 1
+    query = 1
     building = 1
     if len(argv) > 1:
-        if argv[1] in 'week':
-            type = 2
-        elif argv[1] in 'next':
-            type = 3
-        elif argv[1] in 'mensaria':
+        if 'next' in argv:
+            query = 3
+        elif 'week' in argv:
+            query = 2
+        if 'mensaria' in argv:
             building = 7
-            if len(argv) is 3:
-                if argv[2] in 'week':
-                    type = 2
-                elif argv[2] in 'next':
-                    type = 3
         elif argv[1] in 'check':
             if len(argv) is 3:
                 check = str(argv[2]).lower()
             else:
                 check = 'käsespätzle'
-        else:
+        # if query hasn't changed and the above if's didn't match, the option(s) provided are not known
+        elif query is 1:
             exit('Unknown option')
 
     if check:
@@ -165,21 +161,21 @@ def main():
             print(time)
         return
 
-    content = query_mensa_page(type, building)
+    content = query_mensa_page(query, building)
     soup = BeautifulSoup(content, 'html.parser')
 
     days = []
-    if type > 1:
+    if query > 1:
         days = soup.find_all("div", "speiseplan_date")
 
 
     week = {}
-    if type > 1 and len(days) > 1:
+    if query > 1 and len(days) > 1:
         week = extract_days(soup)
 
     menu = ''
     if week:
-        menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[type])
+        menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[query])
         for day, lst in week.items():
             dishes = get_counters_scrubbed(lst)
             menu += format_day(dishes, day)
