@@ -24,7 +24,7 @@ def query_mensa_page(querytype=1, building=1):
 
     return result.content
 
-def get_counters_scrubbed(soup):
+def get_counters_scrubbed(soup, mensaria=False):
     """
     Turn the HTML code into a list of strings.
     vegan/veggi icons are preserved, injected in the code via [veg*] tag
@@ -36,6 +36,17 @@ def get_counters_scrubbed(soup):
 
     # get all contents of the different counters, remove parentheses
     dishes = [re.sub('\(.+?\)', '', line.strip()) for counter in soup.find_all('div', 'counter_box') for line in counter.stripped_strings]
+
+    # in case of Mensaria, include additional meals offered as Snack etc.
+    if mensaria:
+        # Mensaria doesn't have the vegan_icon div, img directly in spmenuname div; take this into account
+        [v.parent.find('span').insert_before(' [%s]' % m.group(0)) for v in soup.find_all("div", "spmenuname") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m]
+        # insert markdown headline syntax before meal type string as well as a pipe after it which becomes a linebreak
+        [v.find('span').insert_before('### ') for v in soup.find_all("div", "specialcounter")]
+        [v.find('span').insert_after('|') for v in soup.find_all("div", "specialcounter")]
+        special = soup.find('div', 'specialbox')
+        dishes += ['\n'] + [re.sub('\(.+?\)', '', line.strip()) for line in special.stripped_strings]
+
     # remove empty lines, | spacings, and kJ values etc.
     dishes[:] = [re.sub(r'\|', '\n', line) for line in filter(None, dishes) if not line.lower().startswith(('kj', 'menü'))]
     # remove strange artifacts like multiple spaces, dash for menu counter, and non-breaking spaces
@@ -124,8 +135,6 @@ def main():
     types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
     buildings = {1: 'Mensa', 7: 'Mensaria'}
 
-    #TODO: in case of Mensaria parse the special{box,counter} div as well
-
     check = None
     query = 1
     building = 1
@@ -177,10 +186,10 @@ def main():
     if week:
         menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[query])
         for day, lst in week.items():
-            dishes = get_counters_scrubbed(lst)
+            dishes = get_counters_scrubbed(lst, building is 7)
             menu += format_day(dishes, day)
     else:
-        dishes = get_counters_scrubbed(soup)
+        dishes = get_counters_scrubbed(soup, building is 7)
         menu = format_day(dishes) % buildings[building]
 
     print(menu)
