@@ -13,12 +13,12 @@ except ImportError:
     exit('Unable to import BeautifulSoup 4, package installed?')
 
 
-def query_mensa_page(type=1):
+def query_mensa_page(type=1, building=1):
     """
     Query the Mensa page and return the retrieved content,
     exit with error if HTTP status code is not okay
     """
-    result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=1&display_type=%d" % type)
+    result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=%d&display_type=%d" % (building, type))
     if result.status_code is not 200:
         exit('Konnte Mensa-Infos nicht abrufen')
 
@@ -51,7 +51,7 @@ def format_day(dishes_list, day_string=''):
     if day_string:
         menu = '\n \n# %s\n' % day_string
     else:
-        menu = '# Die Mensa empfiehlt:\n'
+        menu = '# Die %s empfiehlt:\n'
 
     menu += ' '.join(dishes_list)
     menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
@@ -113,23 +113,34 @@ def find_dish(soup, dish, detail=False):
     if not detail or not match:
         return time
 
-    dish = re.sub(r'\s\(.*\)', '', match.string.strip())
+    dish = re.sub(r'\s?\(.*\)', '', match.string.strip())
     counter = match.parent.parent.find(string=re.compile('Ausgabe')).string.strip()
 
-    time = 'Am %s gibt\'s %s an %s' % (day, dish, counter)
-
-    return time
+    return "Am %s gibt's %s an %s" % (day, dish, counter)
 
 
 def main():
 
+    types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
+    buildings = {1: 'Mensa', 7: 'Mensaria'}
+
+    #TODO: in case of Mensaria parse the special{box,counter} div as well
+
     check = None
     type = 1
+    building = 1
     if len(argv) > 1:
         if argv[1] in 'week':
             type = 2
         elif argv[1] in 'next':
             type = 3
+        elif argv[1] in 'mensaria':
+            building = 7
+            if len(argv) is 3:
+                if argv[2] in 'week':
+                    type = 2
+                elif argv[2] in 'next':
+                    type = 3
         elif argv[1] in 'check':
             if len(argv) is 3:
                 check = str(argv[2]).lower()
@@ -154,7 +165,7 @@ def main():
             print(time)
         return
 
-    content = query_mensa_page(type)
+    content = query_mensa_page(type, building)
     soup = BeautifulSoup(content, 'html.parser')
 
     days = []
@@ -168,13 +179,13 @@ def main():
 
     menu = ''
     if week:
-        menu = '# Wochenplan Mensa:\n'
+        menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[type])
         for day, lst in week.items():
             dishes = get_counters_scrubbed(lst)
             menu += format_day(dishes, day)
     else:
         dishes = get_counters_scrubbed(soup)
-        menu = format_day(dishes)
+        menu = format_day(dishes) % buildings[building]
 
     print(menu)
 
