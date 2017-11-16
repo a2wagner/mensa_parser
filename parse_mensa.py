@@ -138,16 +138,17 @@ def main():
     check = None
     query = 1
     building = 1
-    if len(argv) > 1:
-        if 'next' in argv:
+    args = [arg.lower() for arg in argv[1:]]
+    if args:
+        if 'next' in args:
             query = 3
-        elif 'week' in argv:
+        elif 'week' in args:
             query = 2
-        if 'mensaria' in argv:
+        if 'mensaria' in args:
             building = 7
-        elif argv[1] in 'check':
-            if len(argv) is 3:
-                check = str(argv[2]).lower()
+        elif args[0] in 'check':
+            if len(args) is 2:
+                check = args[1]
             else:
                 check = 'käsespätzle'
         # if query hasn't changed and the above if's didn't match, the option(s) provided are not known
