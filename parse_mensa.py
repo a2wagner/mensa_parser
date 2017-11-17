@@ -131,8 +131,8 @@ def find_dish(soup, dish, detail=False):
     time = datetime.strptime(re.search(r'\d+-\d+-\d+', day).group(0) + ' 12:00', '%d-%m-%Y %H:%M')
     now = datetime.today()
     print('Treffer in %d Tagen!' % (time - now).days)
+    day = day.split()[0] + time.strftime(', %d.%m.')
 
-    day = time.strftime('%A, %d. %B')
     return "Am %s gibt's %s an %s" % (day, dish, counter)
 
 
