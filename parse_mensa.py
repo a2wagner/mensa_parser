@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from sys import exit, argv
+from sys import argv
 import re
 
 try:
     import requests
-except ImportError :
+except ImportError:
     exit('Unable to import requests, package installed?')
 try:
     from bs4 import BeautifulSoup
@@ -35,11 +35,11 @@ def get_counters_scrubbed(soup, mensaria=False):
     # on Fridays the Mensa page shows the meal for Saturday, too – which has again another syntax, ARGH! – take this into account...
     try:
         [v.parent.find('span').insert_before(' [%s]' % m.group(0)) for v in soup.find_all("div", "vegan_icon") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m]
-    except:
+    except AttributeError:
         [v.parent.parent.find('div', 'price').insert_after(' [%s]' % m.group(0)) for v in soup.find_all("div", "vegan_icon") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m]
 
     # get all contents of the different counters, remove parentheses
-    dishes = [re.sub('\(.+?\)', '', line.strip()) for counter in soup.find_all('div', 'counter_box') for line in counter.stripped_strings]
+    dishes = [re.sub(r'\(.+?\)', '', line.strip()) for counter in soup.find_all('div', 'counter_box') for line in counter.stripped_strings]
 
     # in case of Mensaria, include additional meals offered as Snack etc.
     if mensaria:
@@ -49,12 +49,12 @@ def get_counters_scrubbed(soup, mensaria=False):
         [v.find('span').insert_before('### ') for v in soup.find_all("div", "specialcounter")]
         [v.find('span').insert_after('|') for v in soup.find_all("div", "specialcounter")]
         special = soup.find('div', 'specialbox')
-        dishes += ['\n'] + [re.sub('\(.+?\)', '', line.strip()) for line in special.stripped_strings]
+        dishes += ['\n'] + [re.sub(r'\(.+?\)', '', line.strip()) for line in special.stripped_strings]
 
     # remove empty lines, | spacings, and kJ values etc.
     dishes[:] = [re.sub(r'\|', '\n', line) for line in filter(None, dishes) if not line.lower().startswith(('kj', 'menü'))]
     # remove strange artifacts like multiple spaces, dash for menu counter, and non-breaking spaces
-    dishes[:] = [re.sub('\s\s+', ' ', line.rstrip('-').replace(u'\xa0', u' ')) for line in dishes]
+    dishes[:] = [re.sub(r'\s\s+', ' ', line.rstrip('-').replace(u'\xa0', u' ')) for line in dishes]
 
     return dishes
 
@@ -141,7 +141,7 @@ def find_dish(soup, dish, detail=False):
 
 
 def main():
-
+    """main function"""
     types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
     buildings = {1: 'Mensa', 7: 'Mensaria'}
 
