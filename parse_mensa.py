@@ -127,6 +127,10 @@ def find_dish(soup, dish, detail=False):
     dish = re.sub(r'\s?\(.*\)', '', match.string.strip())
     counter = match.parent.parent.find(string=re.compile('Ausgabe')).string.strip()
 
+    from dateutil import parser
+    dt = parser.parse(re.search(r'\d+-\d+-\d+', day).group(0) + ' 12:00')
+    print('Treffer:', dt)
+
     return "Am %s gibt's %s an %s" % (day, dish, counter)
 
 
