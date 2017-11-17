@@ -180,13 +180,9 @@ def main():
     content = query_mensa_page(query, building)
     soup = BeautifulSoup(content, 'html.parser')
 
-    days = []
-    if query > 1:
-        days = soup.find_all("div", "speiseplan_date")
-
-
     week = {}
-    if query > 1 and len(days) > 1:
+    # check if the query type was for a week and we have more than one day in the returned HTML code
+    if query > 1 and len(soup.find_all("div", "speiseplan_date")) > 1:
         week = extract_days(soup)
 
     menu = ''
