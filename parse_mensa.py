@@ -72,8 +72,8 @@ def format_day(dishes_list, day_string=''):
     menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
     menu = re.sub(r'\n\s', r'\n', menu)
     menu = re.sub(r'\[(Veg.*)\]', r'![\1](http://www.studierendenwerk-mainz.de/fileadmin/templates/images/speiseplan/\1.png)', menu)
-    # if Salatbuffet doesn't start in a separate line
-    menu = re.sub(r'\)\sSalat', r')\nSalat', menu)
+    # fix that Salatbuffet doesn't start in a separate line
+    menu = re.sub(r'\s+Salatbuffet', r'\nSalatbuffet', menu)
 
     return menu
 
