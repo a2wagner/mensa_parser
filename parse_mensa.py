@@ -159,22 +159,24 @@ def main():
         if '--no-detail' in args:
             detail = False
             args.remove('--no-detail')
+        if 'week' in args:
+            query = 2
+            args.remove('week')
         if 'next' in args:
             query = 3
             args.remove('next')
-        elif 'week' in args:
-            query = 2
-            args.remove('week')
         if 'mensaria' in args:
             building = 7
             args.remove('mensaria')
-        elif args and args[0] in 'check':
+        if args and args[0] in 'check':
             if len(args) is 2:
                 check = args[1]
+                args.remove(check)
             else:
                 check = 'käsespätzle'
-        # if query hasn't changed and the above if's didn't match, the option(s) provided are not known
-        elif args and query is 1:
+            args.remove('check')
+        # all known options checked and removed; if there are still arguments, the arguments are unknown or the query type was wrong
+        if args:
             exit('Unknown options: ' + ', '.join(args))
 
     if check:
