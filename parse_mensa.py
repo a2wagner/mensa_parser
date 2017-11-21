@@ -143,12 +143,11 @@ def find_dish(soup, dish, mensaria=False, detail=False):
     counter = match.parent.parent.find(string=re.compile('Ausgabe')).string.strip()
     return "Am %s gibt's %s an %s" % (day, dish, counter)
 
-
-def main():
-    """main function"""
-    types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
-    buildings = {1: 'Mensa', 7: 'Mensaria'}
-
+def parse_arguments():
+    """
+    Uses the argv list and checks the arguments for known options.
+    Returns the matched parameters or exits when there are unknown options.
+    """
     check = None
     query = 1
     building = 1
@@ -172,7 +171,7 @@ def main():
             building = 7
             args.remove('mensaria')
         if args and args[0] in 'check':
-            if len(args) is 2:
+            if len(args) > 1:
                 check = args[1]
                 args.remove(check)
             else:
@@ -181,6 +180,16 @@ def main():
         # all known options checked and removed; if there are still arguments, the arguments are unknown or the query type was wrong
         if args:
             exit('Unknown options: ' + ', '.join(args))
+
+    return check, query, building, md_img, detail
+
+
+def main():
+    """main function"""
+    types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
+    buildings = {1: 'Mensa', 7: 'Mensaria'}
+
+    check, query, building, md_img, detail = parse_arguments()
 
     if check:
         print('Checking for', check.title(), 'in', buildings[building])
