@@ -110,7 +110,7 @@ def extract_days(soup):
 
     return days
 
-def find_dish(soup, dish, detail=False):
+def find_dish(soup, dish, mensaria=False, detail=False):
     """
     Try to find a given dish in the parsed content of the Mensa site and return a string when it will be served if found.
     If detail is set to True the method returns the counter as well.
@@ -130,7 +130,6 @@ def find_dish(soup, dish, detail=False):
         return time
 
     dish = re.sub(r'\s?\(.*\)', '', match.string.strip())
-    counter = match.parent.parent.find(string=re.compile('Ausgabe')).string.strip()
 
     from datetime import datetime
     time = datetime.strptime(re.search(r'\d+-\d+-\d+', day).group(0) + ' 12:00', '%d-%m-%Y %H:%M')
@@ -138,6 +137,10 @@ def find_dish(soup, dish, detail=False):
     print('Treffer in %d Tagen!' % (time - now).days)
     day = day.split()[0] + time.strftime(', %d.%m.')
 
+    if mensaria:
+        return "Am %s gibt's %s in der Mensaria" % (day, dish)
+
+    counter = match.parent.parent.find(string=re.compile('Ausgabe')).string.strip()
     return "Am %s gibt's %s an %s" % (day, dish, counter)
 
 
@@ -180,14 +183,14 @@ def main():
             exit('Unknown options: ' + ', '.join(args))
 
     if check:
-        print('Checking for', check.title())
+        print('Checking for', check.title(), 'in', buildings[building])
         # first check the current week
-        this_week = query_mensa_page(2)
-        time = find_dish(BeautifulSoup(this_week, 'html.parser'), check, detail)
+        this_week = query_mensa_page(2, building)
+        time = find_dish(BeautifulSoup(this_week, 'html.parser'), check, building is 7, detail)
         if not time:
             # if we have no match in the current week, check the next week
-            next_week = query_mensa_page(3)
-            time = find_dish(BeautifulSoup(next_week, 'html.parser'), check, detail)
+            next_week = query_mensa_page(3, building)
+            time = find_dish(BeautifulSoup(next_week, 'html.parser'), check, building is 7, detail)
         if not time:
             print('No %s in the next time... :-(' % check.title())
         else:
