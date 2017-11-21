@@ -150,11 +150,15 @@ def main():
     query = 1
     building = 1
     md_img = True
+    detail = True
     args = [arg.lower() for arg in argv[1:]]
     if args:
         if '--no-img' in args:
             md_img = False
             args.remove('--no-img')
+        if '--no-detail' in args:
+            detail = False
+            args.remove('--no-detail')
         if 'next' in args:
             query = 3
             args.remove('next')
@@ -175,7 +179,6 @@ def main():
 
     if check:
         print('Checking for', check.title())
-        detail = True
         # first check the current week
         this_week = query_mensa_page(2)
         time = find_dish(BeautifulSoup(this_week, 'html.parser'), check, detail)
