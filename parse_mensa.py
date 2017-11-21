@@ -58,7 +58,7 @@ def get_counters_scrubbed(soup, mensaria=False):
 
     return dishes
 
-def format_day(dishes_list, day_string=''):
+def format_day(dishes_list, day_string='', markdown_img=True):
     """
     Format a list of strings containing Mensa dishes into Markdown formatted code
     """
@@ -71,7 +71,8 @@ def format_day(dishes_list, day_string=''):
     menu += ' '.join(dishes_list)
     menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
     menu = re.sub(r'\n\s', r'\n', menu)
-    menu = re.sub(r'\[(Veg.*)\]', r'![\1](http://www.studierendenwerk-mainz.de/fileadmin/templates/images/speiseplan/\1.png)', menu)
+    if markdown_img:
+        menu = re.sub(r'\[(Veg.*)\]', r'![\1](http://www.studierendenwerk-mainz.de/fileadmin/templates/images/speiseplan/\1.png)', menu)
     # fix that Salatbuffet doesn't start in a separate line
     menu = re.sub(r'\s+Salatbuffet', r'\nSalatbuffet', menu)
 
@@ -148,8 +149,12 @@ def main():
     check = None
     query = 1
     building = 1
+    md_img = True
     args = [arg.lower() for arg in argv[1:]]
     if args:
+        if '--no-img' in args:
+            md_img = False
+            args.remove('--no-img')
         if 'next' in args:
             query = 3
             args.remove('next')
@@ -197,10 +202,10 @@ def main():
         menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[query])
         for day, lst in week.items():
             dishes = get_counters_scrubbed(lst, building is 7)
-            menu += format_day(dishes, day)
+            menu += format_day(dishes, day, md_img)
     else:
         dishes = get_counters_scrubbed(soup, building is 7)
-        menu = format_day(dishes) % buildings[building]
+        menu = format_day(dishes, markdown_img=md_img) % buildings[building]
 
     print(menu)
 
