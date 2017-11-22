@@ -133,15 +133,20 @@ def find_dish(soup, dish, mensaria=False, detail=False):
 
     from datetime import datetime
     time = datetime.strptime(re.search(r'\d+-\d+-\d+', day).group(0) + ' 16:00', '%d-%m-%Y %H:%M')
-    days = (time - datetime.today()).days
+    now = datetime.today()
+    days = (time - now).days
+    hours = (time - now).seconds / 3600
     print('Treffer %s!' % ('in %d Tagen' % days if days else 'heute'))
     day = day.split()[0] + time.strftime(', %d.%m.')
+    when = 'Am %s ' % day
+    if not days and hours < 16:
+        when = 'Heute '
 
     if mensaria:
-        return "Am %s gibt's %s in der Mensaria" % (day, dish)
+        return when + "gibt's %s in der Mensaria" % dish
 
     counter = match.parent.parent.find(string=re.compile('Ausgabe')).string.strip()
-    return "Am %s gibt's %s an %s" % (day, dish, counter)
+    return when + "gibt's %s an %s" % (dish, counter)
 
 def parse_arguments():
     """
