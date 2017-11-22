@@ -133,12 +133,8 @@ def find_dish(soup, dish, mensaria=False, detail=False):
 
     from datetime import datetime
     time = datetime.strptime(re.search(r'\d+-\d+-\d+', day).group(0) + ' 16:00', '%d-%m-%Y %H:%M')
-    now = datetime.today()
-    days = (time - now).days
-    if days:
-        print('Treffer in %d Tagen!' % days)
-    else:
-        print('Treffer heute!')
+    days = (time - datetime.today()).days
+    print('Treffer %s!' % ('in %d Tagen' % days if days else 'heute'))
     day = day.split()[0] + time.strftime(', %d.%m.')
 
     if mensaria:
