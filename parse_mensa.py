@@ -132,9 +132,13 @@ def find_dish(soup, dish, mensaria=False, detail=False):
     dish = re.sub(r'\s?\(.*\)', '', match.string.strip())
 
     from datetime import datetime
-    time = datetime.strptime(re.search(r'\d+-\d+-\d+', day).group(0) + ' 12:00', '%d-%m-%Y %H:%M')
+    time = datetime.strptime(re.search(r'\d+-\d+-\d+', day).group(0) + ' 16:00', '%d-%m-%Y %H:%M')
     now = datetime.today()
-    print('Treffer in %d Tagen!' % (time - now).days)
+    days = (time - now).days
+    if days:
+        print('Treffer in %d Tagen!' % days)
+    else:
+        print('Treffer heute!')
     day = day.split()[0] + time.strftime(', %d.%m.')
 
     if mensaria:
