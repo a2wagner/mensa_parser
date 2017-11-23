@@ -2,6 +2,7 @@
 
 from sys import argv
 import re
+from collections import OrderedDict
 
 try:
     import requests
@@ -87,7 +88,7 @@ def extract_days(soup):
     which then can be parsed by the get_counters_scrubbed method.
     """
     plan = soup.find('div', 'speiseplan')
-    days = {}
+    days = OrderedDict()
     day = ''
     tags = None
     # loop over children: days followed by counters
