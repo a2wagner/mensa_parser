@@ -203,7 +203,8 @@ def main():
     check, query, building, tmrw, md_img, detail = parse_arguments()
 
     if check:
-        print('Checking for', check.title(), 'in', buildings[building])
+        if detail:
+            print('Checking for', check.title(), 'in', buildings[building])
         # first check the current week
         this_week = query_mensa_page(2, building)
         time = find_dish(BeautifulSoup(this_week, 'html.parser'), check, building is 7, detail)
