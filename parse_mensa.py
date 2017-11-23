@@ -64,12 +64,10 @@ def format_day(dishes_list, day_string='', markdown_img=True):
     Format a list of strings containing Mensa dishes into Markdown formatted code
     """
     menu = ''
-    if not day_string:
-        menu = '# Die %s empfiehlt:\n'
-    elif day_string is 'no':
-        menu = ''
-    else:
+    if day_string:
         menu = '\n \n# %s\n' % day_string
+    else:
+        menu = '# Die %s empfiehlt:\n'
 
     menu += ' '.join(dishes_list)
     menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
@@ -234,9 +232,8 @@ def main():
             exit('Kein morgen gefunden, ist bereits Wochenende?')
         else:
             dishes = get_counters_scrubbed(list(week.values())[1], building is 7)
-            menu = '# Morgen in der %s:' % buildings[building]
-            menu += format_day(dishes, day_string='no', markdown_img=md_img)
-            print(menu)
+            menu = format_day(dishes, 'Morgen in der %s:' % buildings[building], md_img)
+            print(menu.lstrip())
             return
 
     menu = ''
