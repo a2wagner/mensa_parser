@@ -63,10 +63,12 @@ def format_day(dishes_list, day_string='', markdown_img=True):
     Format a list of strings containing Mensa dishes into Markdown formatted code
     """
     menu = ''
-    if day_string:
-        menu = '\n \n# %s\n' % day_string
-    else:
+    if not day_string:
         menu = '# Die %s empfiehlt:\n'
+    elif day_string is 'no':
+        menu = ''
+    else:
+        menu = '\n \n# %s\n' % day_string
 
     menu += ' '.join(dishes_list)
     menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
@@ -156,6 +158,7 @@ def parse_arguments():
     check = None
     query = 1
     building = 1
+    tmrw = False
     md_img = True
     detail = True
     args = [arg.lower() for arg in argv[1:]]
@@ -172,6 +175,10 @@ def parse_arguments():
         if 'next' in args:
             query = 3
             args.remove('next')
+        if 'morgen' in args:
+            query = 2
+            tmrw = True
+            args.remove('morgen')
         if 'mensaria' in args:
             building = 7
             args.remove('mensaria')
@@ -186,7 +193,7 @@ def parse_arguments():
         if args:
             exit('Unknown options: ' + ', '.join(args))
 
-    return check, query, building, md_img, detail
+    return check, query, building, tmrw, md_img, detail
 
 
 def main():
@@ -194,7 +201,7 @@ def main():
     types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
     buildings = {1: 'Mensa', 7: 'Mensaria'}
 
-    check, query, building, md_img, detail = parse_arguments()
+    check, query, building, tmrw, md_img, detail = parse_arguments()
 
     if check:
         print('Checking for', check.title(), 'in', buildings[building])
@@ -218,6 +225,18 @@ def main():
     # check if the query type was for a week and we have more than one day in the returned HTML code
     if query > 1 and len(soup.find_all("div", "speiseplan_date")) > 1:
         week = extract_days(soup)
+
+    if tmrw:
+        if not week:
+            exit('Konnte keinen Wochenplan ermitteln...')
+        elif len(week) is 1:
+            exit('Kein morgen gefunden, ist bereits Wochenende?')
+        else:
+            dishes = get_counters_scrubbed(list(week.values())[1], building is 7)
+            menu = '# Morgen in der %s:' % buildings[building]
+            menu += format_day(dishes, day_string='no', markdown_img=md_img)
+            print(menu)
+            return
 
     menu = ''
     if week:
