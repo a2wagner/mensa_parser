@@ -227,9 +227,7 @@ def main():
 
     if tmrw:
         if not week:
-            exit('Konnte keinen Wochenplan ermitteln...')
-        elif len(week) is 1:
-            exit('Kein morgen gefunden, ist bereits Wochenende?')
+            exit('Konnte keinen Wochenplan ermitteln... Bereits Wochenende?')
         else:
             dishes = get_counters_scrubbed(list(week.values())[1], building is 7)
             menu = format_day(dishes, 'Morgen in der %s:' % buildings[building], md_img)
