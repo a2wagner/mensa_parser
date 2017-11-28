@@ -14,6 +14,16 @@ except ImportError:
     exit('Unable to import BeautifulSoup 4, package installed?')
 
 
+class fmt:
+    """
+    Class which stores escape codes for formatted terminal output
+    """
+    red = r'\033[92m'
+    green = r'\033[91m'
+    bold = r'\033[1m'
+    underlined = r'\033[4m'
+    reset = r'\033[0m'
+
 def query_mensa_page(querytype=1, building=1):
     """
     Query the Mensa page and return the retrieved content,
@@ -59,7 +69,7 @@ def get_counters_scrubbed(soup, mensaria=False):
 
     return dishes
 
-def format_day(dishes_list, day_string='', markdown_img=True):
+def format_day(dishes_list, day_string='', markdown_img=True, terminal=False):
     """
     Format a list of strings containing Mensa dishes into Markdown formatted code
     """
@@ -68,12 +78,20 @@ def format_day(dishes_list, day_string='', markdown_img=True):
         menu = '\n \n# %s\n' % day_string
     else:
         menu = '# Die %s empfiehlt:\n'
+    if terminal:
+        menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (fmt.bold, fmt.reset), menu)
 
     menu += ' '.join(dishes_list)
-    menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
+    if terminal:
+        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## %s\1%s\n' % (fmt.underlined, fmt.reset), menu)
+    else:
+        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
     menu = re.sub(r'\n\s', r'\n', menu)
     if markdown_img:
         menu = re.sub(r'\[(Veg.*)\]', r'![\1](http://www.studierendenwerk-mainz.de/fileadmin/templates/images/speiseplan/\1.png)', menu)
+    elif terminal:
+        menu = re.sub(r'\[(Veggi)\]', r'[%s\1%s]' % (fmt.red, fmt.reset), menu)
+        menu = re.sub(r'\[(Vegan)\]', r'[%s\1%s]' % (fmt.green, fmt.reset), menu)
     # fix that Salatbuffet doesn't start in a separate line
     menu = re.sub(r'\s+Salatbuffet', r'\nSalatbuffet', menu)
 
@@ -160,6 +178,7 @@ def parse_arguments():
     tmrw = False
     md_img = True
     detail = True
+    term = False
     args = [arg.lower() for arg in argv[1:]]
     if args:
         if '--no-img' in args:
@@ -168,6 +187,12 @@ def parse_arguments():
         if '--no-detail' in args:
             detail = False
             args.remove('--no-detail')
+        if '--terminal' in args:
+            term = True
+            args.remove('--terminal')
+            if md_img:
+                print('[WARN] --terminal specified but not --no-img. Assume no Markdown image inclusion.\n')
+                md_img = False
         if 'week' in args:
             query = 2
             args.remove('week')
@@ -192,7 +217,7 @@ def parse_arguments():
         if args:
             exit('Unknown options: ' + ', '.join(args))
 
-    return check, query, building, tmrw, md_img, detail
+    return check, query, building, tmrw, md_img, detail, term
 
 
 def main():
@@ -200,7 +225,7 @@ def main():
     types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
     buildings = {1: 'Mensa', 7: 'Mensaria'}
 
-    check, query, building, tmrw, md_img, detail = parse_arguments()
+    check, query, building, tmrw, md_img, detail, term = parse_arguments()
 
     if check:
         if detail:
@@ -231,19 +256,21 @@ def main():
             exit('Konnte keinen Wochenplan ermitteln... Bereits Wochenende?')
         else:
             dishes = get_counters_scrubbed(list(week.values())[1], building is 7)
-            menu = format_day(dishes, 'Morgen in der %s:' % buildings[building], md_img)
+            menu = format_day(dishes, 'Morgen in der %s:' % buildings[building], md_img, term)
             print(menu.lstrip())
             return
 
     menu = ''
     if week:
         menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[query])
+        if term:
+            menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (fmt.bold, fmt.reset), menu)
         for day, lst in week.items():
             dishes = get_counters_scrubbed(lst, building is 7)
-            menu += format_day(dishes, day, md_img)
+            menu += format_day(dishes, day, md_img, term)
     else:
         dishes = get_counters_scrubbed(soup, building is 7)
-        menu = format_day(dishes, markdown_img=md_img) % buildings[building]
+        menu = format_day(dishes, markdown_img=md_img, terminal=term) % buildings[building]
 
     print(menu)
 
