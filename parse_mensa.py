@@ -14,7 +14,7 @@ except ImportError:
     exit('Unable to import BeautifulSoup 4, package installed?')
 
 
-class fmt:
+class Fmt:
     """
     Class which stores escape codes for formatted terminal output
     """
@@ -79,19 +79,19 @@ def format_day(dishes_list, day_string='', markdown_img=True, terminal=False):
     else:
         menu = '# Die %s empfiehlt:\n'
     if terminal:
-        menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (fmt.bold, fmt.reset), menu)
+        menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (Fmt.bold, Fmt.reset), menu)
 
     menu += ' '.join(dishes_list)
     if terminal:
-        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## %s\1%s\n' % (fmt.underlined, fmt.reset), menu)
+        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## %s\1%s\n' % (Fmt.underlined, Fmt.reset), menu)
     else:
         menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
     menu = re.sub(r'\n\s', r'\n', menu)
     if markdown_img:
         menu = re.sub(r'\[(Veg.*)\]', r'![\1](http://www.studierendenwerk-mainz.de/fileadmin/templates/images/speiseplan/\1.png)', menu)
     elif terminal:
-        menu = re.sub(r'\[(Veggi)\]', r'[%s\1%s]' % (fmt.red, fmt.reset), menu)
-        menu = re.sub(r'\[(Vegan)\]', r'[%s\1%s]' % (fmt.green, fmt.reset), menu)
+        menu = re.sub(r'\[(Veggi)\]', r'[%s\1%s]' % (Fmt.red, Fmt.reset), menu)
+        menu = re.sub(r'\[(Vegan)\]', r'[%s\1%s]' % (Fmt.green, Fmt.reset), menu)
     # fix that Salatbuffet doesn't start in a separate line
     menu = re.sub(r'\s+Salatbuffet', r'\nSalatbuffet', menu)
 
@@ -264,7 +264,7 @@ def main():
     if week:
         menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[query])
         if term:
-            menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (fmt.bold, fmt.reset), menu)
+            menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (Fmt.bold, Fmt.reset), menu)
         for day, lst in week.items():
             dishes = get_counters_scrubbed(lst, building is 7)
             menu += format_day(dishes, day, md_img, term)
