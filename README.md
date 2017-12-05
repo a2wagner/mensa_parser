@@ -42,4 +42,4 @@ and add the following line:
 
 `0 11 * * 1 /path/to/mensa_alarm.sh (dish)`
 
-The dish argument is optional. Make sure both the shell script and the Python script are executable.
+The dish argument is optional. Make sure both the shell script and the Python script are executable and your cron job daemon is activated (systemctl status/enable cronie).
