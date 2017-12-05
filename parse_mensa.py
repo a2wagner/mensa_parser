@@ -239,6 +239,7 @@ def main():
             time = find_dish(BeautifulSoup(next_week, 'html.parser'), check, building is 7, detail)
         if not time:
             print('No %s in the next time... :-(' % check.title())
+            exit(1)
         else:
             print(time)
         return
