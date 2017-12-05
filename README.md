@@ -30,6 +30,33 @@ Run with `node parse_mensa.js`
 
 Run it with `./parse_mensa.py` or `python parse_mensa.py`
 
+#### Examples
+
+Markdown output of Mensa for current day:
+
+`./parse_mensa.py`
+
+Output better suited for terminals:
+
+`./parse_mensa.py --no-img --terminal`
+
+Mensaria for the next day:
+
+`parse_mensa.py mensaria morgen`
+
+Week plan for the (next) week:
+
+`./parse_mensa.py (next) week`
+
+Check for a certain dish (in the Mensaria), Käsespätzle will be used if dish is not passed:
+
+`./parse_mensa.py (mensaria) check (dish)`
+
+You might want to add the following aliases to your `.bashrc`:
+
+    alias mensa='~/parse_mensa.py --no-img --terminal'
+    alias mensaria='~/parse_mensa.py --no-img --terminal mensaria'
+
 ## Mensa Alarm
 
 The shell script `mensa_alarm.sh` calls the Python script mentioned above to check for certain meals. If there's a match, it will be send to the desktop environment as a notification.
