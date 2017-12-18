@@ -52,11 +52,17 @@ def get_counters_scrubbed(soup, mensaria=False):
     Some other artifacts and unwanted stuff is removed as well.
     """
     pattern = re.compile('Veg..').search
-    # on Fridays the Mensa page shows the meal for Saturday, too – which has again another syntax, ARGH! – take this into account...
-    try:
-        any(v.parent.find('span').insert_before(' [%s]' % m.group(0)) for v in soup.find_all("div", "vegan_icon") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m)
-    except AttributeError:
-        any(v.parent.parent.find('div', 'price').insert_after(' [%s]' % m.group(0)) for v in soup.find_all("div", "vegan_icon") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m)
+    # counter 2 menu is treated different than normal counters,
+    # and on Fridays the Mensa page shows the meal for Saturday, too – which has again another syntax, ARGH! – take this into account...
+    # maybe the try catch could be replaced by something more intelligent later
+    for v in soup.find_all('div', 'vegan_icon'):
+        for i in v.find_all('img'):
+            for m in [pattern(i.get('src'))]:
+                if m:
+                    try:
+                        v.parent.find('span').insert_before(' [%s]' % m.group(0))
+                    except AttributeError:
+                        v.parent.parent.find('div', 'price').insert_after(' [%s]' % m.group(0))
 
     # get all contents of the different counters, remove parentheses
     dishes = [re.sub(r'\(.+?\)', '', line.strip()) for counter in soup.find_all('div', 'counter_box') for line in counter.stripped_strings]
