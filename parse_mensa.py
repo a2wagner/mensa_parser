@@ -41,8 +41,7 @@ def has_menu(soup):
     """
     if not soup.find('div', 'speiseplan').text.strip():
         return False
-    else:
-        return True
+    return True
 
 def get_counters_scrubbed(soup, mensaria=False):
     """
