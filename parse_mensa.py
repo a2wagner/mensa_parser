@@ -241,11 +241,15 @@ def main():
             print('Checking for', check.title(), 'in', buildings[building])
         # first check the current week
         this_week = query_mensa_page(2, building)
-        time = find_dish(BeautifulSoup(this_week, 'html.parser'), check, building is 7, detail)
+        soup = BeautifulSoup(this_week, 'html.parser')
+        if has_menu(soup):
+            time = find_dish(soup, check, building is 7, detail)
         if not time:
             # if we have no match in the current week, check the next week
             next_week = query_mensa_page(3, building)
-            time = find_dish(BeautifulSoup(next_week, 'html.parser'), check, building is 7, detail)
+            soup = BeautifulSoup(next_week, 'html.parser')
+            if has_menu(soup):
+                time = find_dish(soup, check, building is 7, detail)
         if not time:
             print('No %s in the next time... :-(' % check.title())
             exit(1)
