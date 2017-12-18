@@ -35,6 +35,15 @@ def query_mensa_page(querytype=1, building=1):
 
     return result.content
 
+def has_menu(soup):
+    """
+    Check if the queried contents contain meaningful values inside the 'speiseplan' div
+    """
+    if not soup.find('div', 'speiseplan').text.strip():
+        return False
+    else:
+        return True
+
 def get_counters_scrubbed(soup, mensaria=False):
     """
     Turn the HTML code into a list of strings.
@@ -246,8 +255,9 @@ def main():
 
     content = query_mensa_page(query, building)
     soup = BeautifulSoup(content, 'html.parser')
+
     # check if the found menu contains anything
-    if not soup.find('div', 'speiseplan').text.strip():
+    if not has_menu(soup):
         exit('Leerer Speiseplan, Mensa geschlossen?')
 
     week = {}
