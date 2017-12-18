@@ -246,6 +246,9 @@ def main():
 
     content = query_mensa_page(query, building)
     soup = BeautifulSoup(content, 'html.parser')
+    # check if the found menu contains anything
+    if not soup.find('div', 'speiseplan').text.strip():
+        exit('Leerer Speiseplan, Mensa geschlossen?')
 
     week = {}
     # check if the query type was for a week and we have more than one day in the returned HTML code
