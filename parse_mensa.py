@@ -58,20 +58,20 @@ def get_counters_scrubbed(soup, mensaria=False):
         for i in v.find_all('img'):
             for m in [pattern(i.get('src'))]:
                 if m:
-                    try:
-                        v.parent.find('span').insert_before(' [%s]' % m.group(0))
-                    except AttributeError:
-                        v.parent.parent.find('div', 'price').insert_after(' [%s]' % m.group(0))
+                    if v.parent['class'][0] == 'menuspeise':
+                        v.parent.insert_after(' [%s]' % m.group(0))
 
+    # insert a pipe (will be replaced with newline) before every food item (due to changed syntax)
+    any([v.find('div').insert_before('|') for v in soup.find_all('div', 'menuspeise') if v.find('div')])
     # get all contents of the different counters, remove parentheses
     dishes = [re.sub(r'\(.+?\)', '', line.strip()) for counter in soup.find_all('div', 'counter_box') for line in counter.stripped_strings]
 
     # in case of Mensaria, include additional meals offered as Snack etc.
     if mensaria:
-        # Mensaria doesn't have the vegan_icon div, img directly in spmenuname div; take this into account
-        any(v.parent.find('span').insert_before(' [%s]' % m.group(0)) for v in soup.find_all("div", "spmenuname") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m)
+        # Mensaria doesn't have the vegan_icon div, img directly in spmenuname div; take this into account assuming the price div is the last one in the spmenuename parent container
+        any(v.parent.find('div', 'price').insert_after(' [%s]' % m.group(0)) for v in soup.find_all("div", "spmenuname") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m)
         # insert markdown headline syntax before meal type string as well as a pipe after it which becomes a linebreak
-        any(v.find('span').insert_before('### ') for v in soup.find_all("div", "specialcounter"))
+        any(v.find('span').insert_before('|### ') for v in soup.find_all("div", "specialcounter"))
         any(v.find('span').insert_after('|') for v in soup.find_all("div", "specialcounter"))
         special = soup.find('div', 'specialbox')
         dishes += ['\n'] + [re.sub(r'\(.+?\)', '', line.strip()) for line in special.stripped_strings]
@@ -97,9 +97,9 @@ def format_day(dishes_list, day_string='', markdown_img=True, terminal=False):
 
     menu += ' '.join(dishes_list)
     if terminal:
-        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## %s\1%s\n' % (Fmt.underlined, Fmt.reset), menu)
+        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## %s\1%s' % (Fmt.underlined, Fmt.reset), menu)
     else:
-        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1\n', menu)
+        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1', menu)
     menu = re.sub(r'\n\s', r'\n', menu)
     if markdown_img:
         menu = re.sub(r'\[(Veg.*)\]', r'![\1](http://www.studierendenwerk-mainz.de/fileadmin/templates/images/speiseplan/\1.png)', menu)
@@ -126,12 +126,15 @@ def extract_days(soup):
         # only interested in divs containing the menu
         if child.name and child.name in 'div':
             # if this div contains a string, it's only the date
-            if child.string:
+            if child['class'][0] in 'speiseplan_date':
                 # if we find a day string and have collected tags already, start a new day and store info in dict
                 if tags:
                     days.update({day: tags})
                     tags = None
                 day = child.string
+            # skip the building name
+            elif child['class'][0] in 'speiseplan_bldngall_name':
+                continue
             # if it contains no string but more, all following tags are the dishes of this day
             else:
                 if tags:
