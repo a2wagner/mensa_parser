@@ -51,15 +51,7 @@ def get_counters_scrubbed(soup, mensaria=False):
     Some other artifacts and unwanted stuff is removed as well.
     """
     pattern = re.compile('Veg..').search
-    # counter 2 menu is treated different than normal counters,
-    # and on Fridays the Mensa page shows the meal for Saturday, too – which has again another syntax, ARGH! – take this into account...
-    # maybe the try catch could be replaced by something more intelligent later
-    for v in soup.find_all('div', 'vegan_icon'):
-        for i in v.find_all('img'):
-            for m in [pattern(i.get('src'))]:
-                if m:
-                    if v.parent['class'][0] == 'menuspeise':
-                        v.parent.insert_after(' [%s]' % m.group(0))
+    any(v.parent.insert_after(' [%s]' % m.group(0)) for v in soup.find_all("div", "vegan_icon") for i in v.find_all('img') for m in [pattern(i.get('src'))] if m and v.parent['class'][0] in 'menuspeise')
 
     # insert a pipe (will be replaced with newline) before every food item (due to changed syntax)
     any([v.find('div').insert_before('|') for v in soup.find_all('div', 'menuspeise') if v.find('div')])
