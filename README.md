@@ -5,6 +5,8 @@ Python version using [Beautiful Soup](https://www.crummy.com/software/BeautifulS
 
 ## Node
 
+NOTE: Outdated as of ~13.11.2018, syntax of the mensa code changed, only Python version has been updated
+
 ### Requirements:
 
   * request
