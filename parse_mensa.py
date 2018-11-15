@@ -168,12 +168,12 @@ def find_dish(soup, dish, mensaria=False, detail=False):
     dish = re.sub(r'\s?\(.*\)', '', match.string.strip())
 
     from datetime import datetime
-    time = datetime.strptime(re.search(r'\d+-\d+-\d+', day).group(0) + ' 16:00', '%d-%m-%Y %H:%M')
+    time = datetime.strptime(re.search(r'\d+. \w+ \d+', day).group(0) + ' 16:00', '%d. %B %Y %H:%M')
     now = datetime.today()
     days = (time - now).days
     hours = (time - now).seconds / 3600
     print('Treffer %s!' % ('in %d Tagen' % days if days else 'heute'))
-    day = day.split()[0] + time.strftime(', %d.%m.')
+    day = day.split()[0] + time.strftime(' %d.%m.')
     when = 'Am %s ' % day
     if not days and hours < 16:
         when = 'Heute '
