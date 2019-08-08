@@ -32,6 +32,10 @@ Run with `node parse_mensa.js`
 
 Run it with `./parse_mensa.py` or `python parse_mensa.py`
 
+#### Languages
+
+German is used by default (and if `--german` is passed as an argument). If you add `--english` as a flag mostly everything will be shown in English. But be aware of a maybe wrong output since the Mensa is unable to provide proper (or even complete) translations of the German menu.
+
 #### Examples
 
 Markdown output of Mensa for current day:

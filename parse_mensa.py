@@ -24,14 +24,17 @@ class Fmt:
     underlined = r'\033[4m'
     reset = r'\033[0m'
 
-def query_mensa_page(querytype=1, building=1):
+def query_mensa_page(querytype=1, building=1, language=0):
     """
     Query the Mensa page and return the retrieved content,
     exit with error if HTTP status code is not okay
     """
-    result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=%d&display_type=%d" % (building, querytype))
+    result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=%d&display_type=%d&L=%d" % (building, querytype, language))
     if result.status_code is not 200:
-        exit('Konnte Mensa-Infos nicht abrufen')
+        msg = 'Konnte Mensa-Infos nicht abrufen'
+        if language is 3:
+            msg = "Couldn't retrieve Mensa information"
+        exit(msg)
 
     return result.content
 
@@ -69,13 +72,13 @@ def get_counters_scrubbed(soup, mensaria=False):
         dishes += ['\n'] + [re.sub(r'\(.+?\)', '', line.strip()) for line in special.stripped_strings]
 
     # remove empty lines, | spacings, and kJ values etc.
-    dishes[:] = [re.sub(r'\|', '\n', line) for line in filter(None, dishes) if not line.lower().startswith(('kj', 'menü'))]
+    dishes[:] = [re.sub(r'\|', '\n', line) for line in filter(None, dishes) if not line.lower().startswith(('kj', 'menü', 'menu'))]
     # remove strange artifacts like multiple spaces, dash for menu counter, and non-breaking spaces
     dishes[:] = [re.sub(r'\s\s+', ' ', line.rstrip('-').replace(u'\xa0', u' ')) for line in dishes]
 
     return dishes
 
-def format_day(dishes_list, day_string='', markdown_img=True, terminal=False):
+def format_day(dishes_list, day_string='', markdown_img=True, terminal=False, language='German'):
     """
     Format a list of strings containing Mensa dishes into Markdown formatted code
     """
@@ -84,14 +87,19 @@ def format_day(dishes_list, day_string='', markdown_img=True, terminal=False):
         menu = '\n \n# %s\n' % day_string
     else:
         menu = '# Die %s empfiehlt:\n'
+        if language is 'English':
+            menu = '# Today in the %s:\n'
     if terminal:
         menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (Fmt.bold, Fmt.reset), menu)
 
     menu += ' '.join(dishes_list)
+    counter_string = 'Ausgabe'
+    if language is 'English':
+        counter_string = 'Counter'
     if terminal:
-        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## %s\1%s' % (Fmt.underlined, Fmt.reset), menu)
+        menu = re.sub(r'\s*(' + counter_string + '\s\d)', r'\n \n## %s\1%s' % (Fmt.underlined, Fmt.reset), menu)
     else:
-        menu = re.sub(r'\s*(Ausgabe\s\d)', r'\n \n## \1', menu)
+        menu = re.sub(r'\s*(' + counter_string + '\s\d)', r'\n \n## \1', menu)
     menu = re.sub(r'\n\s', r'\n', menu)
     if markdown_img:
         menu = re.sub(r'\[(Veg.*)\]', r'![\1](http://www.studierendenwerk-mainz.de/fileadmin/templates/images/speiseplan/\1.png)', menu)
@@ -184,6 +192,7 @@ def parse_arguments():
     check = None
     query = 1
     building = 1
+    language = 0  # 0 (and 1 and 2) German, 3 English
     tmrw = False
     md_img = True
     detail = True
@@ -202,6 +211,12 @@ def parse_arguments():
             if md_img:
                 print('[WARN] --terminal specified but not --no-img. Assume no Markdown image inclusion.\n')
                 md_img = False
+        if '--german' in args:
+            language = 0
+            args.remove('--german')
+        if '--english' in args:
+            language = 3
+            args.remove('--english')
         if 'week' in args:
             query = 2
             args.remove('week')
@@ -212,6 +227,10 @@ def parse_arguments():
             query = 2
             tmrw = True
             args.remove('morgen')
+        if 'tomorrow' in args:
+            query = 2
+            tmrw = True
+            args.remove('tomorrow')
         if 'mensaria' in args:
             building = 7
             args.remove('mensaria')
@@ -226,15 +245,17 @@ def parse_arguments():
         if args:
             exit('Unknown options: ' + ', '.join(args))
 
-    return check, query, building, tmrw, md_img, detail, term
+    return check, query, building, language, tmrw, md_img, detail, term
 
 
 def main():
     """main function"""
     types = {1: 'aktueller Tag', 2: 'aktuelle Woche', 3: 'nächste Woche'}
+    types_en = {1: 'current day', 2: 'current week', 3: 'next week'}
     buildings = {1: 'Mensa', 7: 'Mensaria'}
+    languages = {0: 'German', 3: 'English'}
 
-    check, query, building, tmrw, md_img, detail, term = parse_arguments()
+    check, query, building, language, tmrw, md_img, detail, term = parse_arguments()
 
     if check:
         if detail:
@@ -257,7 +278,7 @@ def main():
             print(time)
         return
 
-    content = query_mensa_page(query, building)
+    content = query_mensa_page(query, building, language)
     soup = BeautifulSoup(content, 'html.parser')
 
     # check if the found menu contains anything
@@ -274,21 +295,26 @@ def main():
             exit('Konnte keinen Wochenplan ermitteln... Bereits Wochenende?')
         else:
             dishes = get_counters_scrubbed(list(week.values())[1], building is 7)
-            menu = format_day(dishes, 'Morgen in der %s:' % buildings[building], md_img, term)
+            string = 'Morgen in der'
+            if language is 3:
+                string = 'Tomorrow in the'
+            menu = format_day(dishes, '%s %s:' % (string, buildings[building]), md_img, term, language=languages[language])
             print(menu.lstrip())
             return
 
     menu = ''
     if week:
         menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[query])
+        if language is 3:
+            menu = '# Week plan %s (%s):\n' % (buildings[building], types_en[query])
         if term:
             menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (Fmt.bold, Fmt.reset), menu)
         for day, lst in week.items():
             dishes = get_counters_scrubbed(lst, building is 7)
-            menu += format_day(dishes, day, md_img, term)
+            menu += format_day(dishes, day, md_img, term, language=languages[language])
     else:
         dishes = get_counters_scrubbed(soup, building is 7)
-        menu = format_day(dishes, markdown_img=md_img, terminal=term) % buildings[building]
+        menu = format_day(dishes, markdown_img=md_img, terminal=term, language=languages[language]) % buildings[building]
 
     print(menu)
 
