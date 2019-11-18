@@ -30,9 +30,9 @@ def query_mensa_page(querytype=1, building=1, language=0):
     exit with error if HTTP status code is not okay
     """
     result = requests.get("https://www.studierendenwerk-mainz.de/speiseplan/frontend/index.php?building_id=%d&display_type=%d&L=%d" % (building, querytype, language))
-    if result.status_code is not 200:
+    if result.status_code != 200:
         msg = 'Konnte Mensa-Infos nicht abrufen'
-        if language is 3:
+        if language == 3:
             msg = "Couldn't retrieve Mensa information"
         exit(msg)
 
@@ -87,14 +87,14 @@ def format_day(dishes_list, day_string='', markdown_img=True, terminal=False, la
         menu = '\n \n# %s\n' % day_string
     else:
         menu = '# Die %s empfiehlt:\n'
-        if language is 'English':
+        if language == 'English':
             menu = '# Today in the %s:\n'
     if terminal:
         menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (Fmt.bold, Fmt.reset), menu)
 
     menu += ' '.join(dishes_list)
     counter_string = 'Ausgabe'
-    if language is 'English':
+    if language == 'English':
         counter_string = 'Counter'
     if terminal:
         menu = re.sub(r'\s*(' + counter_string + '\s\d)', r'\n \n## %s\1%s' % (Fmt.underlined, Fmt.reset), menu)
@@ -264,13 +264,13 @@ def main():
         this_week = query_mensa_page(2, building)
         soup = BeautifulSoup(this_week, 'html.parser')
         if has_menu(soup):
-            time = find_dish(soup, check, building is 7, detail)
+            time = find_dish(soup, check, building == 7, detail)
         if not time:
             # if we have no match in the current week, check the next week
             next_week = query_mensa_page(3, building)
             soup = BeautifulSoup(next_week, 'html.parser')
             if has_menu(soup):
-                time = find_dish(soup, check, building is 7, detail)
+                time = find_dish(soup, check, building == 7, detail)
         if not time:
             print('No %s in the next time... :-(' % check.title())
             exit(1)
@@ -294,9 +294,9 @@ def main():
         if not week:
             exit('Konnte keinen Wochenplan ermitteln... Bereits Wochenende?')
         else:
-            dishes = get_counters_scrubbed(list(week.values())[1], building is 7)
+            dishes = get_counters_scrubbed(list(week.values())[1], building == 7)
             string = 'Morgen in der'
-            if language is 3:
+            if language == 3:
                 string = 'Tomorrow in the'
             menu = format_day(dishes, '%s %s:' % (string, buildings[building]), md_img, term, language=languages[language])
             print(menu.lstrip())
@@ -305,15 +305,15 @@ def main():
     menu = ''
     if week:
         menu = '# Wochenplan %s (%s):\n' % (buildings[building], types[query])
-        if language is 3:
+        if language == 3:
             menu = '# Week plan %s (%s):\n' % (buildings[building], types_en[query])
         if term:
             menu = re.sub(r'#(.*)\n', r'#%s\1%s\n' % (Fmt.bold, Fmt.reset), menu)
         for day, lst in week.items():
-            dishes = get_counters_scrubbed(lst, building is 7)
+            dishes = get_counters_scrubbed(lst, building == 7)
             menu += format_day(dishes, day, md_img, term, language=languages[language])
     else:
-        dishes = get_counters_scrubbed(soup, building is 7)
+        dishes = get_counters_scrubbed(soup, building == 7)
         menu = format_day(dishes, markdown_img=md_img, terminal=term, language=languages[language]) % buildings[building]
 
     print(menu)
