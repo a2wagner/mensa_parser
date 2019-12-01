@@ -263,6 +263,7 @@ def main():
         # first check the current week
         this_week = query_mensa_page(2, building)
         soup = BeautifulSoup(this_week, 'html.parser')
+        time = None  # set time to None, prevents error if check is run on e.g. a Sunday when there's no menu
         if has_menu(soup):
             time = find_dish(soup, check, building == 7, detail)
         if not time:
