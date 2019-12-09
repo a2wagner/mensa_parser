@@ -168,6 +168,8 @@ def find_dish(soup, dish, mensaria=False, detail=False):
     dish = re.sub(r'\s?\(.*\)', '', match.string.strip())
 
     from datetime import datetime
+    import locale
+    locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')  # set locale for time to German since the month names are in German
     time = datetime.strptime(re.search(r'\d+. \w+ \d+', day).group(0) + ' 16:00', '%d. %B %Y %H:%M')
     now = datetime.today()
     days = (time - now).days
